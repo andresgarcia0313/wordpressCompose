@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  web:
+    image: ${WEB_IMAGE_BASE}
+    container_name: ${COMPOSE_PROJECT_NAME}web
+    hostname: ${WEB_HOSTNAME}
+    ports:
+      - "${WEB_PORT}:80"
+      - "${WEB_SSL_PORT}:443"
+    environment:
+      WORDPRESS_DB_HOST: ${COMPOSE_PROJECT_NAME}db
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${COMPOSE_PROJECT_NAME}web
+    volumes:
+      - ./data/web:/var/www/html
+    mem_limit: 192m
+    networks:
+      - network
+    restart: always
+    depends_on:
+      - db
+    labels:
+      - "com.${COMPOSE_PROJECT_NAME}.description=Web"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 1m
+      timeout: 10s
+      retries: 6
+    #cpus: 0.5
+  db:
+    image: ${DB_IMAGE_BASE}
+    container_name: ${COMPOSE_PROJECT_NAME}db
+    hostname: ${COMPOSE_PROJECT_NAME}db
+    environment:
+      MARIADB_DATABASE: ${COMPOSE_PROJECT_NAME}web
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      TZ: "America/Bogota"
+      LANG: "es_CO.utf8"
+    volumes:
+      - ./data/db:/var/lib/mysql
+    mem_limit: 192m
+    ports:
+      - "${DB_PORT}:3306"
+    networks:
+      - network
+    restart: always
+    labels:
+      - "com.${COMPOSE_PROJECT_NAME}.description=Base De Datos de la Web"
+    #cpus: 0.5
+networks:
+  network:
+    driver: bridge
+  proxyred:
+    external: true
